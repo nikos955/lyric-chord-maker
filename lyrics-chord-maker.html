@@ -336,12 +336,38 @@
             margin-top: 20px;
             color: #999;
             font-size: 13px;
+            line-height: 1.8;
         }
 
         .divider {
             border: none;
             border-top: 2px dashed #ddd;
             margin: 8px 0 12px 0;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin: 8px 0;
+            font-size: 14px;
+            color: #0c5460;
+            line-height: 1.8;
+        }
+        .info-box strong {
+            color: #0c5460;
+        }
+        .info-box .highlight {
+            background: #fef9f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #e67e22;
+        }
+        .info-box .step {
+            display: block;
+            padding: 2px 0;
         }
 
         @media (max-width: 450px) {
@@ -402,13 +428,17 @@ I've come to talk with you again</textarea>
     <div class="button-row">
         <button class="btn-save-data" onclick="saveChordData()">💾 Save Chords</button>
         <button class="btn-load-data" onclick="loadChordData()">📂 Load Chords</button>
+        <button class="btn-export" onclick="exportLyrics()">📤 Export .txt</button>
     </div>
 
-    <div class="filename-row">
-        <label>📄 File:</label>
-        <input type="text" id="fileName" value="song_chords" />
-        <span class="ext">.txt</span>
-        <button class="btn-export" onclick="exportLyrics()">💾 Export</button>
+    <div class="info-box">
+        <strong>📖 How to use:</strong><br /><br />
+        
+        <span class="step">1. Paste lyrics → click <span class="highlight">📥 Load Lyrics</span></span>
+        <span class="step">2. Tap any word → pick a chord from the list</span>
+        <span class="step">3. Click <span class="highlight">💾 Save Chords</span> → saves as <strong>.json</strong> (lyrics + chords)</span>
+        <span class="step">4. Later, click <span class="highlight">📂 Load Chords</span> → select the .json file to restore everything</span>
+        <span class="step">5. Click <span class="highlight">📤 Export .txt</span> → creates .txt file for sharing/printing</span>
     </div>
 
     <div id="lyricsOutput" class="lyrics-output">
@@ -418,9 +448,9 @@ I've come to talk with you again</textarea>
     <div id="status" class="status"></div>
 
     <div class="footer">
-        💾 Save Chords = saves chord data (can be loaded later)<br />
-        📂 Load Chords = restores saved chord data<br />
-        💾 Export = saves as .txt with chords above lyrics
+        💾 Save Chords = saves as .json (lyrics + chords)<br />
+        📂 Load Chords = restores from .json<br />
+        📤 Export .txt = saves as .txt (for sharing)
     </div>
 
     <!-- Modal -->
@@ -600,27 +630,11 @@ I've come to talk with you again</textarea>
             showStatus('All chords cleared.', 'success');
         }
 
-        // --- Helper: Encode filename for UTF-8 ---
-        function encodeFileName(name) {
-            // Try to keep Greek characters by using encodeURIComponent
-            // but only for the filename part, not the extension
-            const parts = name.split('.');
-            if (parts.length > 1) {
-                const ext = parts.pop();
-                const base = parts.join('.');
-                // For the download attribute, we need to use encodeURIComponent
-                // but some browsers handle UTF-8 fine now
-                return base + '.' + ext;
-            }
-            return name;
-        }
-
         // --- Helper: Download with UTF-8 filename ---
         function downloadWithUTF8(filename, content, type) {
             const blob = new Blob(['\uFEFF' + content], { type: type + ';charset=utf-8' });
             const url = URL.createObjectURL(blob);
             
-            // Try using the File System Access API first (works with UTF-8 names)
             if ('showSaveFilePicker' in window && !navigator.userAgent.includes('Mobile')) {
                 const opts = {
                     suggestedName: filename,
@@ -643,15 +657,11 @@ I've come to talk with you again</textarea>
                 return;
             }
             
-            // Fallback: use a link with download attribute
             fallbackDownloadUTF8(url, filename);
         }
 
         function fallbackDownloadUTF8(url, filename) {
-            // For the download attribute, we need to use encodeURIComponent
-            // to handle non-ASCII characters
             try {
-                // Try with the original filename first (modern browsers)
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
@@ -659,7 +669,6 @@ I've come to talk with you again</textarea>
                 a.click();
                 document.body.removeChild(a);
             } catch (e) {
-                // If that fails, use encoded version
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = encodeURIComponent(filename);
@@ -670,7 +679,7 @@ I've come to talk with you again</textarea>
             setTimeout(() => URL.revokeObjectURL(url), 2000);
         }
 
-        // --- SAVE CHORD DATA ---
+        // --- SAVE CHORD DATA (JSON) ---
         function saveChordData() {
             if (!lines.length) {
                 showStatus('Load lyrics first.', 'error');
@@ -687,14 +696,13 @@ I've come to talk with you again</textarea>
 
             const json = JSON.stringify(data, null, 2);
             let name = document.getElementById('fileName').value.trim() || 'song_chords';
-            // Don't remove Greek characters - keep them
-            name = name + '.json';
+            if (!name.endsWith('.json')) name += '.json';
 
             downloadWithUTF8(name, json, 'application/json');
             showStatus(`✅ Chord data saved as "${name}"`, 'success');
         }
 
-        // --- LOAD CHORD DATA ---
+        // --- LOAD CHORD DATA (JSON) ---
         function loadChordData() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -749,7 +757,6 @@ I've come to talk with you again</textarea>
             }
 
             let name = document.getElementById('fileName').value.trim() || 'song_chords';
-            // Keep Greek characters
             if (!name.endsWith('.txt')) name += '.txt';
 
             let output = [];
