@@ -24,6 +24,12 @@
             text-align: center;
             color: #2c3e50;
         }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
         textarea {
             width: 100%;
             min-height: 120px;
@@ -124,7 +130,6 @@
             vertical-align: bottom;
             background: transparent;
             transition: background 0.15s;
-            position: relative;
         }
         .word-block:active {
             background: #d5d5d5;
@@ -148,15 +153,9 @@
             white-space: nowrap;
         }
 
-        .badge {
-            font-size: 8px;
-            background: #e67e22;
-            color: white;
-            border-radius: 10px;
-            padding: 0 5px;
-            margin-left: 1px;
-            display: inline-block;
-            vertical-align: top;
+        .has-chord {
+            background: #fef9f0;
+            border-radius: 4px;
         }
 
         .empty-line {
@@ -192,7 +191,13 @@
         .modal-box h2 {
             text-align: center;
             font-size: 18px;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+        }
+        .modal-sub {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
         }
         .modal-word {
             text-align: center;
@@ -201,9 +206,9 @@
             background: #ecf0f1;
             padding: 10px;
             border-radius: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
-        .modal-chords {
+        .modal-current {
             text-align: center;
             font-size: 18px;
             font-weight: bold;
@@ -214,7 +219,7 @@
             margin-bottom: 12px;
             min-height: 36px;
         }
-        .modal-chords .none {
+        .modal-current .none {
             color: #999;
             font-weight: normal;
         }
@@ -235,9 +240,14 @@
             font-weight: 600;
             cursor: pointer;
             min-width: 44px;
+            transition: background 0.15s;
         }
         .chord-grid button:active {
             background: #bdc3c7;
+        }
+        .chord-grid button.selected {
+            background: #e67e22;
+            color: white;
         }
 
         .modal-actions {
@@ -311,13 +321,14 @@
 <body>
 
     <h1>🎵 Lyric Chord Maker</h1>
+    <p class="subtitle">Tap any word to add or change a chord</p>
 
     <textarea id="lyricsInput">Hello darkness my old friend
 I've come to talk with you again</textarea>
 
     <div class="button-row">
         <button class="btn-load" onclick="loadLyrics()">📥 Load</button>
-        <button class="btn-clear" onclick="clearChords()">🗑️ Clear</button>
+        <button class="btn-clear" onclick="clearChords()">🗑️ Clear All Chords</button>
     </div>
 
     <div class="filename-row">
@@ -334,25 +345,28 @@ I've come to talk with you again</textarea>
     <div id="status" class="status"></div>
 
     <div class="footer">
-        Tap any word to add chords. Chords appear above the word.
+        Tap any word → pick a chord from the list. Tap "Remove" to delete it.
     </div>
 
+    <!-- Modal -->
     <div id="modal" class="modal-overlay">
         <div class="modal-box">
-            <h2>🎸 Add chords to</h2>
+            <h2>🎸 Choose a chord</h2>
+            <p class="modal-sub">for the word</p>
             <div id="modalWord" class="modal-word">word</div>
-            <div id="modalChords" class="modal-chords"><span class="none">No chords</span></div>
+            <div id="modalCurrent" class="modal-current"><span class="none">No chord selected</span></div>
             <div id="chordGrid" class="chord-grid"></div>
             <div class="modal-actions">
-                <button class="btn-remove" onclick="removeChord()">➖ Remove</button>
-                <button class="btn-done" onclick="saveChords()">✅ Done</button>
+                <button class="btn-remove" onclick="removeChord()">🗑️ Remove</button>
+                <button class="btn-done" onclick="saveChord()">✅ Done</button>
                 <button class="btn-cancel" onclick="cancelModal()">✖ Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
-        const CHORDS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+        const CHORDS = [
+            'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
             'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm',
             'C7', 'D7', 'E7', 'F7', 'G7', 'A7', 'B7',
             'Cmaj7', 'Dmaj7', 'Emaj7', 'Fmaj7', 'Gmaj7', 'Amaj7', 'Bmaj7'
@@ -361,7 +375,7 @@ I've come to talk with you again</textarea>
         let lines = [];
         let selectedLine = null;
         let selectedWord = null;
-        let tempChords = [];
+        let tempChord = null;
 
         function loadLyrics() {
             const text = document.getElementById('lyricsInput').value;
@@ -373,12 +387,12 @@ I've come to talk with you again</textarea>
             lines = raw.map(line => {
                 if (line.trim() === '') return { words: [], empty: true };
                 return {
-                    words: line.split(/\s+/).filter(w => w.length > 0).map(w => ({ word: w, chords: [] })),
+                    words: line.split(/\s+/).filter(w => w.length > 0).map(w => ({ word: w, chord: null })),
                     empty: false
                 };
             });
             render();
-            showStatus(`Loaded ${lines.length} lines. Tap a word to add chords.`, 'success');
+            showStatus(`Loaded ${lines.length} lines. Tap a word to add a chord.`, 'success');
         }
 
         function render() {
@@ -394,13 +408,12 @@ I've come to talk with you again</textarea>
                     return;
                 }
                 line.words.forEach((w, wi) => {
-                    const chords = w.chords || [];
-                    const chordStr = chords.length ? chords.join(' ') : '\u00A0';
-                    html += `<span class="word-block" onclick="openModal(${li},${wi})">`;
-                    html += `<span class="chord-text">${chordStr}</span>`;
-                    html += `<span class="word-text">${w.word}`;
-                    if (chords.length > 1) html += `<span class="badge">${chords.length}</span>`;
-                    html += `</span></span>`;
+                    const chord = w.chord || '\u00A0';
+                    const hasChord = w.chord !== null;
+                    html += `<span class="word-block ${hasChord ? 'has-chord' : ''}" onclick="openModal(${li},${wi})">`;
+                    html += `<span class="chord-text">${chord}</span>`;
+                    html += `<span class="word-text">${w.word}</span>`;
+                    html += `</span>`;
                 });
                 html += '<br>';
             });
@@ -411,7 +424,7 @@ I've come to talk with you again</textarea>
             selectedLine = li;
             selectedWord = wi;
             const word = lines[li].words[wi];
-            tempChords = [...word.chords];
+            tempChord = word.chord;
             document.getElementById('modalWord').textContent = word.word;
             updateModal();
 
@@ -420,48 +433,59 @@ I've come to talk with you again</textarea>
             CHORDS.forEach(c => {
                 const btn = document.createElement('button');
                 btn.textContent = c;
-                btn.onclick = () => { tempChords.push(c);
-                    updateModal(); };
+                if (c === tempChord) btn.classList.add('selected');
+                btn.onclick = () => {
+                    tempChord = c;
+                    updateModal();
+                    // Update button styles
+                    document.querySelectorAll('#chordGrid button').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                };
                 grid.appendChild(btn);
             });
             document.getElementById('modal').classList.add('active');
         }
 
         function updateModal() {
-            const el = document.getElementById('modalChords');
-            if (tempChords.length === 0) {
-                el.innerHTML = '<span class="none">No chords</span>';
+            const el = document.getElementById('modalCurrent');
+            if (tempChord === null) {
+                el.innerHTML = '<span class="none">No chord selected</span>';
             } else {
-                el.innerHTML = tempChords.map(c => `<strong>${c}</strong>`).join(' ');
+                el.innerHTML = `<strong>${tempChord}</strong>`;
             }
         }
 
         function removeChord() {
-            if (tempChords.length === 0) return;
-            tempChords.pop();
+            tempChord = null;
             updateModal();
+            // Deselect all buttons
+            document.querySelectorAll('#chordGrid button').forEach(b => b.classList.remove('selected'));
         }
 
-        function saveChords() {
+        function saveChord() {
             if (selectedLine !== null && selectedWord !== null) {
-                lines[selectedLine].words[selectedWord].chords = [...tempChords];
+                lines[selectedLine].words[selectedWord].chord = tempChord;
                 render();
             }
             document.getElementById('modal').classList.remove('active');
             selectedLine = null;
             selectedWord = null;
-            tempChords = [];
+            tempChord = null;
         }
 
         function cancelModal() {
             document.getElementById('modal').classList.remove('active');
             selectedLine = null;
             selectedWord = null;
-            tempChords = [];
+            tempChord = null;
         }
 
         function clearChords() {
-            lines.forEach(l => { if (!l.empty) l.words.forEach(w => w.chords = []); });
+            if (!lines.length) {
+                showStatus('No lyrics loaded.', 'error');
+                return;
+            }
+            lines.forEach(l => { if (!l.empty) l.words.forEach(w => w.chord = null); });
             render();
             showStatus('All chords cleared.', 'success');
         }
@@ -478,28 +502,21 @@ I've come to talk with you again</textarea>
 
             let output = [];
             lines.forEach(line => {
-                if (line.empty) { output.push('');
-                    return; }
-                let maxChords = 0;
-                line.words.forEach(w => { if (w.chords.length > maxChords) maxChords = w.chords.length; });
-                if (maxChords === 0) maxChords = 1;
-
-                for (let level = 0; level < maxChords; level++) {
-                    let lineStr = '';
-                    line.words.forEach(w => {
-                        const chord = level < w.chords.length ? w.chords[level] : '';
-                        const word = (level === 0) ? w.word : '';
-                        const len = Math.max(chord.length, word.length);
-                        lineStr += chord.padEnd(len + 1, ' ');
-                    });
-                    output.push(lineStr.trimEnd());
+                if (line.empty) {
+                    output.push('');
+                    return;
                 }
+                // Chord line
+                let chordLine = '';
                 let wordLine = '';
                 line.words.forEach(w => {
-                    const firstChord = w.chords[0] || '';
-                    const len = Math.max(w.word.length, firstChord.length);
-                    wordLine += w.word.padEnd(len + 1, ' ');
+                    const chord = w.chord || '';
+                    const word = w.word;
+                    const maxLen = Math.max(chord.length, word.length);
+                    chordLine += chord.padEnd(maxLen + 1, ' ');
+                    wordLine += word.padEnd(maxLen + 1, ' ');
                 });
+                output.push(chordLine.trimEnd());
                 output.push(wordLine.trimEnd());
             });
 
