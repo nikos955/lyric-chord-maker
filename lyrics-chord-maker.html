@@ -45,6 +45,7 @@
             display: flex;
             gap: 10px;
             margin: 12px 0;
+            flex-wrap: wrap;
         }
         .button-row button {
             flex: 1;
@@ -55,6 +56,7 @@
             font-weight: 600;
             color: white;
             cursor: pointer;
+            min-width: 80px;
         }
         .btn-load {
             background: #3498db;
@@ -62,8 +64,11 @@
         .btn-clear {
             background: #e74c3c;
         }
-        .btn-export {
-            background: #2ecc71;
+        .btn-save-data {
+            background: #9b59b6;
+        }
+        .btn-load-data {
+            background: #1abc9c;
         }
 
         .filename-row {
@@ -89,6 +94,7 @@
             font-size: 15px;
             min-width: 80px;
             background: white;
+            font-family: inherit;
         }
         .filename-row .ext {
             color: #666;
@@ -164,6 +170,7 @@
             font-style: italic;
         }
 
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -175,40 +182,48 @@
             justify-content: center;
             align-items: center;
             z-index: 999;
+            padding: 20px;
         }
         .modal-overlay.active {
             display: flex;
         }
+
         .modal-box {
             background: white;
             border-radius: 16px;
-            padding: 24px 20px;
             max-width: 480px;
-            width: 95%;
-            max-height: 80vh;
-            overflow-y: auto;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .modal-box h2 {
+
+        .modal-header {
+            padding: 20px 20px 8px 20px;
+            flex-shrink: 0;
+        }
+        .modal-header h2 {
             text-align: center;
             font-size: 18px;
             margin-bottom: 4px;
         }
-        .modal-sub {
+        .modal-header .modal-sub {
             text-align: center;
             color: #666;
             font-size: 14px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
-        .modal-word {
+        .modal-header .modal-word {
             text-align: center;
             font-size: 26px;
             font-weight: bold;
             background: #ecf0f1;
             padding: 10px;
             border-radius: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
-        .modal-current {
+        .modal-header .modal-current {
             text-align: center;
             font-size: 18px;
             font-weight: bold;
@@ -216,20 +231,36 @@
             background: #fef9f0;
             padding: 8px;
             border-radius: 8px;
-            margin-bottom: 12px;
             min-height: 36px;
         }
-        .modal-current .none {
+        .modal-header .modal-current .none {
             color: #999;
             font-weight: normal;
         }
 
+        .modal-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 20px 12px 20px;
+        }
+
+        .chord-group {
+            margin-bottom: 10px;
+        }
+        .chord-group-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 4px;
+            padding-left: 2px;
+            border-bottom: 1px solid #eee;
+        }
         .chord-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            justify-content: center;
-            margin-bottom: 10px;
+            justify-content: flex-start;
+            margin-bottom: 4px;
         }
         .chord-grid button {
             padding: 8px 14px;
@@ -250,6 +281,13 @@
             color: white;
         }
 
+        .modal-footer {
+            padding: 12px 20px 20px 20px;
+            flex-shrink: 0;
+            border-top: 1px solid #eee;
+            background: white;
+            border-radius: 0 0 16px 16px;
+        }
         .modal-actions {
             display: flex;
             gap: 8px;
@@ -300,6 +338,12 @@
             font-size: 13px;
         }
 
+        .divider {
+            border: none;
+            border-top: 2px dashed #ddd;
+            margin: 8px 0 12px 0;
+        }
+
         @media (max-width: 450px) {
             .word-text {
                 font-size: 15px;
@@ -315,6 +359,28 @@
                 padding: 1px 1px;
                 margin: 0 1px;
             }
+            .chord-grid button {
+                font-size: 14px;
+                padding: 6px 10px;
+                min-width: 36px;
+            }
+            .modal-box {
+                max-height: 95vh;
+            }
+            .modal-header {
+                padding: 16px 16px 6px 16px;
+            }
+            .modal-scroll {
+                padding: 6px 16px 8px 16px;
+            }
+            .modal-footer {
+                padding: 10px 16px 16px 16px;
+            }
+            .button-row button {
+                font-size: 14px;
+                padding: 10px;
+                min-width: 60px;
+            }
         }
     </style>
 </head>
@@ -323,19 +389,26 @@
     <h1>🎵 Lyric Chord Maker</h1>
     <p class="subtitle">Tap any word to add or change a chord</p>
 
-    <textarea id="lyricsInput">Hello darkness my old friend
+    <textarea id="lyricsInput" placeholder="Paste your lyrics here...">Hello darkness my old friend
 I've come to talk with you again</textarea>
 
     <div class="button-row">
-        <button class="btn-load" onclick="loadLyrics()">📥 Load</button>
-        <button class="btn-clear" onclick="clearChords()">🗑️ Clear All Chords</button>
+        <button class="btn-load" onclick="loadLyrics()">📥 Load Lyrics</button>
+        <button class="btn-clear" onclick="clearChords()">🗑️ Clear Chords</button>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="button-row">
+        <button class="btn-save-data" onclick="saveChordData()">💾 Save Chords</button>
+        <button class="btn-load-data" onclick="loadChordData()">📂 Load Chords</button>
     </div>
 
     <div class="filename-row">
         <label>📄 File:</label>
         <input type="text" id="fileName" value="song_chords" />
         <span class="ext">.txt</span>
-        <button class="btn-export" onclick="exportLyrics()">💾 Save</button>
+        <button class="btn-export" onclick="exportLyrics()">💾 Export</button>
     </div>
 
     <div id="lyricsOutput" class="lyrics-output">
@@ -345,38 +418,53 @@ I've come to talk with you again</textarea>
     <div id="status" class="status"></div>
 
     <div class="footer">
-        Tap any word → pick a chord from the list. Tap "Remove" to delete it.
+        💾 Save Chords = saves chord data (can be loaded later)<br />
+        📂 Load Chords = restores saved chord data<br />
+        💾 Export = saves as .txt with chords above lyrics
     </div>
 
     <!-- Modal -->
     <div id="modal" class="modal-overlay">
         <div class="modal-box">
-            <h2>🎸 Choose a chord</h2>
-            <p class="modal-sub">for the word</p>
-            <div id="modalWord" class="modal-word">word</div>
-            <div id="modalCurrent" class="modal-current"><span class="none">No chord selected</span></div>
-            <div id="chordGrid" class="chord-grid"></div>
-            <div class="modal-actions">
-                <button class="btn-remove" onclick="removeChord()">🗑️ Remove</button>
-                <button class="btn-done" onclick="saveChord()">✅ Done</button>
-                <button class="btn-cancel" onclick="cancelModal()">✖ Cancel</button>
+            <div class="modal-header">
+                <h2>🎸 Choose a chord</h2>
+                <p class="modal-sub">for the word</p>
+                <div id="modalWord" class="modal-word">word</div>
+                <div id="modalCurrent" class="modal-current"><span class="none">No chord selected</span></div>
+            </div>
+
+            <div id="modalScroll" class="modal-scroll">
+                <div id="chordGroups"></div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="modal-actions">
+                    <button class="btn-remove" onclick="removeChord()">🗑️ Remove</button>
+                    <button class="btn-done" onclick="saveChord()">✅ Done</button>
+                    <button class="btn-cancel" onclick="cancelModal()">✖ Cancel</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const CHORDS = [
-            'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-            'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm',
-            'C7', 'D7', 'E7', 'F7', 'G7', 'A7', 'B7',
-            'Cmaj7', 'Dmaj7', 'Emaj7', 'Fmaj7', 'Gmaj7', 'Amaj7', 'Bmaj7'
-        ];
+        // --- Chords grouped by letter ---
+        const CHORD_GROUPS = {
+            'A': ['A', 'A#', 'Ab', 'Am', 'A#m', 'Abm', 'A7', 'A#7', 'Ab7', 'Amaj7', 'A#maj7', 'Abmaj7'],
+            'B': ['B', 'Bb', 'Bm', 'Bbm', 'B7', 'Bb7', 'Bmaj7', 'Bbmaj7'],
+            'C': ['C', 'C#', 'Cm', 'C#m', 'C7', 'C#7', 'Cmaj7', 'C#maj7'],
+            'D': ['D', 'D#', 'Db', 'Dm', 'D#m', 'Dbm', 'D7', 'D#7', 'Db7', 'Dmaj7', 'D#maj7', 'Dbmaj7'],
+            'E': ['E', 'E#', 'Eb', 'Em', 'E#m', 'Ebm', 'E7', 'E#7', 'Eb7', 'Emaj7', 'E#maj7', 'Ebmaj7'],
+            'F': ['F', 'F#', 'Fm', 'F#m', 'F7', 'F#7', 'Fmaj7', 'F#maj7'],
+            'G': ['G', 'G#', 'Gb', 'Gm', 'G#m', 'Gbm', 'G7', 'G#7', 'Gb7', 'Gmaj7', 'G#maj7', 'Gbmaj7']
+        };
 
         let lines = [];
         let selectedLine = null;
         let selectedWord = null;
         let tempChord = null;
 
+        // --- Load lyrics ---
         function loadLyrics() {
             const text = document.getElementById('lyricsInput').value;
             if (!text.trim()) {
@@ -395,6 +483,7 @@ I've come to talk with you again</textarea>
             showStatus(`Loaded ${lines.length} lines. Tap a word to add a chord.`, 'success');
         }
 
+        // --- Render ---
         function render() {
             const container = document.getElementById('lyricsOutput');
             if (!lines.length || lines.every(l => l.empty)) {
@@ -420,6 +509,7 @@ I've come to talk with you again</textarea>
             container.innerHTML = html;
         }
 
+        // --- Modal functions ---
         function openModal(li, wi) {
             selectedLine = li;
             selectedWord = wi;
@@ -428,21 +518,42 @@ I've come to talk with you again</textarea>
             document.getElementById('modalWord').textContent = word.word;
             updateModal();
 
-            const grid = document.getElementById('chordGrid');
-            grid.innerHTML = '';
-            CHORDS.forEach(c => {
-                const btn = document.createElement('button');
-                btn.textContent = c;
-                if (c === tempChord) btn.classList.add('selected');
-                btn.onclick = () => {
-                    tempChord = c;
-                    updateModal();
-                    // Update button styles
-                    document.querySelectorAll('#chordGrid button').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                };
-                grid.appendChild(btn);
+            const container = document.getElementById('chordGroups');
+            container.innerHTML = '';
+
+            const sortedKeys = Object.keys(CHORD_GROUPS).sort();
+            sortedKeys.forEach(key => {
+                const chords = CHORD_GROUPS[key];
+                
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'chord-group';
+                
+                const label = document.createElement('div');
+                label.className = 'chord-group-label';
+                label.textContent = key;
+                groupDiv.appendChild(label);
+                
+                const grid = document.createElement('div');
+                grid.className = 'chord-grid';
+                
+                chords.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.textContent = c;
+                    if (c === tempChord) btn.classList.add('selected');
+                    btn.onclick = () => {
+                        tempChord = c;
+                        updateModal();
+                        document.querySelectorAll('#chordGroups button').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                    };
+                    grid.appendChild(btn);
+                });
+                
+                groupDiv.appendChild(grid);
+                container.appendChild(groupDiv);
             });
+
+            document.getElementById('modalScroll').scrollTop = 0;
             document.getElementById('modal').classList.add('active');
         }
 
@@ -458,8 +569,7 @@ I've come to talk with you again</textarea>
         function removeChord() {
             tempChord = null;
             updateModal();
-            // Deselect all buttons
-            document.querySelectorAll('#chordGrid button').forEach(b => b.classList.remove('selected'));
+            document.querySelectorAll('#chordGroups button').forEach(b => b.classList.remove('selected'));
         }
 
         function saveChord() {
@@ -490,6 +600,148 @@ I've come to talk with you again</textarea>
             showStatus('All chords cleared.', 'success');
         }
 
+        // --- Helper: Encode filename for UTF-8 ---
+        function encodeFileName(name) {
+            // Try to keep Greek characters by using encodeURIComponent
+            // but only for the filename part, not the extension
+            const parts = name.split('.');
+            if (parts.length > 1) {
+                const ext = parts.pop();
+                const base = parts.join('.');
+                // For the download attribute, we need to use encodeURIComponent
+                // but some browsers handle UTF-8 fine now
+                return base + '.' + ext;
+            }
+            return name;
+        }
+
+        // --- Helper: Download with UTF-8 filename ---
+        function downloadWithUTF8(filename, content, type) {
+            const blob = new Blob(['\uFEFF' + content], { type: type + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            // Try using the File System Access API first (works with UTF-8 names)
+            if ('showSaveFilePicker' in window && !navigator.userAgent.includes('Mobile')) {
+                const opts = {
+                    suggestedName: filename,
+                    types: [{ description: type === 'application/json' ? 'JSON File' : 'Text File', 
+                             accept: { [type]: ['.' + filename.split('.').pop()] } }]
+                };
+                window.showSaveFilePicker(opts)
+                    .then(handle => {
+                        handle.createWritable().then(writable => {
+                            writable.write(blob);
+                            writable.close();
+                            return true;
+                        });
+                    })
+                    .catch(err => {
+                        if (err.name !== 'AbortError') {
+                            fallbackDownloadUTF8(url, filename);
+                        }
+                    });
+                return;
+            }
+            
+            // Fallback: use a link with download attribute
+            fallbackDownloadUTF8(url, filename);
+        }
+
+        function fallbackDownloadUTF8(url, filename) {
+            // For the download attribute, we need to use encodeURIComponent
+            // to handle non-ASCII characters
+            try {
+                // Try with the original filename first (modern browsers)
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch (e) {
+                // If that fails, use encoded version
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = encodeURIComponent(filename);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        // --- SAVE CHORD DATA ---
+        function saveChordData() {
+            if (!lines.length) {
+                showStatus('Load lyrics first.', 'error');
+                return;
+            }
+
+            const data = {
+                lyrics: document.getElementById('lyricsInput').value,
+                chords: lines.map(line => {
+                    if (line.empty) return [];
+                    return line.words.map(w => w.chord);
+                })
+            };
+
+            const json = JSON.stringify(data, null, 2);
+            let name = document.getElementById('fileName').value.trim() || 'song_chords';
+            // Don't remove Greek characters - keep them
+            name = name + '_chord_data.json';
+
+            downloadWithUTF8(name, json, 'application/json');
+            showStatus(`✅ Chord data saved as "${name}"`, 'success');
+        }
+
+        // --- LOAD CHORD DATA ---
+        function loadChordData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        
+                        if (data.lyrics) {
+                            document.getElementById('lyricsInput').value = data.lyrics;
+                        }
+                        
+                        if (data.chords && data.chords.length > 0) {
+                            const text = data.lyrics || document.getElementById('lyricsInput').value;
+                            const raw = text.split('\n');
+                            lines = raw.map((line, index) => {
+                                if (line.trim() === '') return { words: [], empty: true };
+                                const words = line.split(/\s+/).filter(w => w.length > 0);
+                                const chordData = data.chords[index] || [];
+                                return {
+                                    words: words.map((w, wi) => ({
+                                        word: w,
+                                        chord: chordData[wi] || null
+                                    })),
+                                    empty: false
+                                };
+                            });
+                            render();
+                            showStatus(`✅ Chord data loaded successfully!`, 'success');
+                        } else {
+                            showStatus('No chord data found in file.', 'error');
+                        }
+                    } catch (err) {
+                        showStatus('Error loading file: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            };
+            input.click();
+        }
+
+        // --- EXPORT as .txt ---
         function exportLyrics() {
             if (!lines.length) {
                 showStatus('Load lyrics first.', 'error');
@@ -497,7 +749,7 @@ I've come to talk with you again</textarea>
             }
 
             let name = document.getElementById('fileName').value.trim() || 'song_chords';
-            name = name.replace(/[^a-zA-Z0-9_\-]/g, '_');
+            // Keep Greek characters
             if (!name.endsWith('.txt')) name += '.txt';
 
             let output = [];
@@ -506,7 +758,6 @@ I've come to talk with you again</textarea>
                     output.push('');
                     return;
                 }
-                // Chord line
                 let chordLine = '';
                 let wordLine = '';
                 line.words.forEach(w => {
@@ -521,39 +772,17 @@ I've come to talk with you again</textarea>
             });
 
             const text = output.join('\n');
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-
-            if ('showSaveFilePicker' in window) {
-                window.showSaveFilePicker({
-                    suggestedName: name,
-                    types: [{ description: 'Text', accept: { 'text/plain': ['.txt'] } }]
-                }).then(handle => {
-                    handle.createWritable().then(w => w.write(text).then(() => w.close()));
-                    showStatus(`✅ Saved "${name}"`, 'success');
-                }).catch(() => fallback(url, name));
-            } else {
-                fallback(url, name);
-            }
+            downloadWithUTF8(name, text, 'text/plain');
+            showStatus(`✅ Exported as "${name}"`, 'success');
         }
 
-        function fallback(url, name) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            showStatus(`✅ Downloaded "${name}"`, 'success');
-        }
-
+        // --- Status ---
         function showStatus(msg, type) {
             const el = document.getElementById('status');
             el.textContent = msg;
             el.className = 'status show ' + type;
             clearTimeout(el._timer);
-            el._timer = setTimeout(() => el.classList.remove('show'), 3500);
+            el._timer = setTimeout(() => el.classList.remove('show'), 4000);
         }
 
         window.onload = loadLyrics;
