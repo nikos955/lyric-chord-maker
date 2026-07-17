@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎵 Lyric Chord Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 26px;
+            margin-bottom: 16px;
+            text-align: center;
+            color: #2c3e50;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            background: white;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin: 12px 0;
+        }
+        .button-row button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+        }
+        .btn-load {
+            background: #3498db;
+        }
+        .btn-clear {
+            background: #e74c3c;
+        }
+        .btn-export {
+            background: #2ecc71;
+        }
+
+        .filename-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+            background: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .filename-row label {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .filename-row input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            min-width: 80px;
+            background: white;
+        }
+        .filename-row .ext {
+            color: #666;
+        }
+        .filename-row .btn-export {
+            flex: 0.3;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            background: #2ecc71;
+            font-weight: 600;
+        }
+
+        .lyrics-output {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 2;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .word-block {
+            display: inline-block;
+            text-align: center;
+            margin: 0 2px;
+            padding: 2px 3px;
+            cursor: pointer;
+            border-radius: 4px;
+            min-width: 20px;
+            vertical-align: bottom;
+            background: transparent;
+            transition: background 0.15s;
+            position: relative;
+        }
+        .word-block:active {
+            background: #d5d5d5;
+        }
+
+        .chord-text {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: #e67e22;
+            min-height: 18px;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .word-text {
+            display: block;
+            font-size: 18px;
+            color: #2c3e50;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .badge {
+            font-size: 8px;
+            background: #e67e22;
+            color: white;
+            border-radius: 10px;
+            padding: 0 5px;
+            margin-left: 1px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .empty-line {
+            color: #999;
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 20px;
+            max-width: 480px;
+            width: 95%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-box h2 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .modal-word {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .modal-chords {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #e67e22;
+            background: #fef9f0;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            min-height: 36px;
+        }
+        .modal-chords .none {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .chord-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .chord-grid button {
+            padding: 8px 14px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 44px;
+        }
+        .chord-grid button:active {
+            background: #bdc3c7;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .modal-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-done {
+            background: #3498db;
+        }
+        .btn-remove {
+            background: #e67e22;
+        }
+        .btn-cancel {
+            background: #888;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .status.show {
+            display: block;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        @media (max-width: 450px) {
+            .word-text {
+                font-size: 15px;
+            }
+            .chord-text {
+                font-size: 11px;
+            }
+            .lyrics-output {
+                font-size: 14px;
+                padding: 10px 6px;
+            }
+            .word-block {
+                padding: 1px 1px;
+                margin: 0 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎵 Lyric Chord Maker</h1>
+
+    <textarea id="lyricsInput">Hello darkness my old friend
+I've come to talk with you again</textarea>
+
+    <div class="button-row">
+        <button class="btn-load" onclick="loadLyrics()">📥 Load</button>
+        <button class="btn-clear" onclick="clearChords()">🗑️ Clear</button>
+    </div>
+
+    <div class="filename-row">
+        <label>📄 File:</label>
+        <input type="text" id="fileName" value="song_chords" />
+        <span class="ext">.txt</span>
+        <button class="btn-export" onclick="exportLyrics()">💾 Save</button>
+    </div>
+
+    <div id="lyricsOutput" class="lyrics-output">
+        <span style="color:#999; font-style:italic;">Paste lyrics above and tap "Load"</span>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div class="footer">
+        Tap any word to add chords. Chords appear above the word.
+    </div>
+
+    <div id="modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>🎸 Add chords to</h2>
+            <div id="modalWord" class="modal-word">word</div>
+            <div id="modalChords" class="modal-chords"><span class="none">No chords</span></div>
+            <div id="chordGrid" class="chord-grid"></div>
+            <div class="modal-actions">
+                <button class="btn-remove" onclick="removeChord()">➖ Remove</button>
+                <button class="btn-done" onclick="saveChords()">✅ Done</button>
+                <button class="btn-cancel" onclick="cancelModal()">✖ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CHORDS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+            'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm',
+            'C7', 'D7', 'E7', 'F7', 'G7', 'A7', 'B7',
+            'Cmaj7', 'Dmaj7', 'Emaj7', 'Fmaj7', 'Gmaj7', 'Amaj7', 'Bmaj7'
+        ];
+
+        let lines = [];
+        let selectedLine = null;
+        let selectedWord = null;
+        let tempChords = [];
+
+        function loadLyrics() {
+            const text = document.getElementById('lyricsInput').value;
+            if (!text.trim()) {
+                showStatus('Please paste some lyrics first.', 'error');
+                return;
+            }
+            const raw = text.split('\n');
+            lines = raw.map(line => {
+                if (line.trim() === '') return { words: [], empty: true };
+                return {
+                    words: line.split(/\s+/).filter(w => w.length > 0).map(w => ({ word: w, chords: [] })),
+                    empty: false
+                };
+            });
+            render();
+            showStatus(`Loaded ${lines.length} lines. Tap a word to add chords.`, 'success');
+        }
+
+        function render() {
+            const container = document.getElementById('lyricsOutput');
+            if (!lines.length || lines.every(l => l.empty)) {
+                container.innerHTML = '<span style="color:#999;font-style:italic;">No lyrics loaded.</span>';
+                return;
+            }
+            let html = '';
+            lines.forEach((line, li) => {
+                if (line.empty) {
+                    html += '<div class="empty-line">↕ empty line</div>';
+                    return;
+                }
+                line.words.forEach((w, wi) => {
+                    const chords = w.chords || [];
+                    const chordStr = chords.length ? chords.join(' ') : '\u00A0';
+                    html += `<span class="word-block" onclick="openModal(${li},${wi})">`;
+                    html += `<span class="chord-text">${chordStr}</span>`;
+                    html += `<span class="word-text">${w.word}`;
+                    if (chords.length > 1) html += `<span class="badge">${chords.length}</span>`;
+                    html += `</span></span>`;
+                });
+                html += '<br>';
+            });
+            container.innerHTML = html;
+        }
+
+        function openModal(li, wi) {
+            selectedLine = li;
+            selectedWord = wi;
+            const word = lines[li].words[wi];
+            tempChords = [...word.chords];
+            document.getElementById('modalWord').textContent = word.word;
+            updateModal();
+
+            const grid = document.getElementById('chordGrid');
+            grid.innerHTML = '';
+            CHORDS.forEach(c => {
+                const btn = document.createElement('button');
+                btn.textContent = c;
+                btn.onclick = () => { tempChords.push(c);
+                    updateModal(); };
+                grid.appendChild(btn);
+            });
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function updateModal() {
+            const el = document.getElementById('modalChords');
+            if (tempChords.length === 0) {
+                el.innerHTML = '<span class="none">No chords</span>';
+            } else {
+                el.innerHTML = tempChords.map(c => `<strong>${c}</strong>`).join(' ');
+            }
+        }
+
+        function removeChord() {
+            if (tempChords.length === 0) return;
+            tempChords.pop();
+            updateModal();
+        }
+
+        function saveChords() {
+            if (selectedLine !== null && selectedWord !== null) {
+                lines[selectedLine].words[selectedWord].chords = [...tempChords];
+                render();
+            }
+            document.getElementById('modal').classList.remove('active');
+            selectedLine = null;
+            selectedWord = null;
+            tempChords = [];
+        }
+
+        function cancelModal() {
+            document.getElementById('modal').classList.remove('active');
+            selectedLine = null;
+            selectedWord = null;
+            tempChords = [];
+        }
+
+        function clearChords() {
+            lines.forEach(l => { if (!l.empty) l.words.forEach(w => w.chords = []); });
+            render();
+            showStatus('All chords cleared.', 'success');
+        }
+
+        function exportLyrics() {
+            if (!lines.length) {
+                showStatus('Load lyrics first.', 'error');
+                return;
+            }
+
+            let name = document.getElementById('fileName').value.trim() || 'song_chords';
+            name = name.replace(/[^a-zA-Z0-9_\-]/g, '_');
+            if (!name.endsWith('.txt')) name += '.txt';
+
+            let output = [];
+            lines.forEach(line => {
+                if (line.empty) { output.push('');
+                    return; }
+                let maxChords = 0;
+                line.words.forEach(w => { if (w.chords.length > maxChords) maxChords = w.chords.length; });
+                if (maxChords === 0) maxChords = 1;
+
+                for (let level = 0; level < maxChords; level++) {
+                    let lineStr = '';
+                    line.words.forEach(w => {
+                        const chord = level < w.chords.length ? w.chords[level] : '';
+                        const word = (level === 0) ? w.word : '';
+                        const len = Math.max(chord.length, word.length);
+                        lineStr += chord.padEnd(len + 1, ' ');
+                    });
+                    output.push(lineStr.trimEnd());
+                }
+                let wordLine = '';
+                line.words.forEach(w => {
+                    const firstChord = w.chords[0] || '';
+                    const len = Math.max(w.word.length, firstChord.length);
+                    wordLine += w.word.padEnd(len + 1, ' ');
+                });
+                output.push(wordLine.trimEnd());
+            });
+
+            const text = output.join('\n');
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            if ('showSaveFilePicker' in window) {
+                window.showSaveFilePicker({
+                    suggestedName: name,
+                    types: [{ description: 'Text', accept: { 'text/plain': ['.txt'] } }]
+                }).then(handle => {
+                    handle.createWritable().then(w => w.write(text).then(() => w.close()));
+                    showStatus(`✅ Saved "${name}"`, 'success');
+                }).catch(() => fallback(url, name));
+            } else {
+                fallback(url, name);
+            }
+        }
+
+        function fallback(url, name) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            showStatus(`✅ Downloaded "${name}"`, 'success');
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status show ' + type;
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.remove('show'), 3500);
+        }
+
+        window.onload = loadLyrics;
+    </script>
+
+</body>
+</html>
