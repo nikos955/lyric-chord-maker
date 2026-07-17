@@ -1,1 +1,1 @@
-Write/Paste some text with lyrics, select a word, choose a chord, repeat, export to text file. Chords are placed on top of their corresponding words. You can also save / load chords with json files of thesame name. 
+Write/Paste some text with lyrics, select a word, choose a chord, repeat, export to text file. Chords are placed on top of their corresponding words. You can also save / load chords with json files of the same name. 
