@@ -688,7 +688,7 @@ I've come to talk with you again</textarea>
             const json = JSON.stringify(data, null, 2);
             let name = document.getElementById('fileName').value.trim() || 'song_chords';
             // Don't remove Greek characters - keep them
-            name = name + '_chord_data.json';
+            name = name + '.json';
 
             downloadWithUTF8(name, json, 'application/json');
             showStatus(`✅ Chord data saved as "${name}"`, 'success');
