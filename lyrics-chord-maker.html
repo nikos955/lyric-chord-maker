@@ -20,7 +20,7 @@
         }
         h1 {
             font-size: 26px;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             text-align: center;
             color: #2c3e50;
         }
@@ -111,18 +111,117 @@
             font-weight: 600;
         }
 
+        /* Controls row */
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0 0 0;
+            background: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .controls-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .controls-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .controls-row label {
+            font-weight: 600;
+            white-space: nowrap;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .controls-row .transpose-btn {
+            padding: 4px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #ecf0f1;
+            color: #2c3e50;
+            min-width: 36px;
+        }
+        .controls-row .transpose-btn:active {
+            background: #bdc3c7;
+        }
+        .controls-row .transpose-display {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 32px;
+            text-align: center;
+            color: #2c3e50;
+        }
+        .controls-row .transpose-reset {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e74c3c;
+            color: white;
+        }
+        .controls-row .transpose-reset:active {
+            opacity: 0.7;
+        }
+        .controls-row .toggle-btn {
+            padding: 4px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #ecf0f1;
+            color: #2c3e50;
+            transition: background 0.2s;
+        }
+        .controls-row .toggle-btn.active {
+            background: #e67e22;
+            color: white;
+        }
+        .controls-row select {
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            background: white;
+            color: #2c3e50;
+            cursor: pointer;
+        }
+        .controls-row .key-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: normal;
+        }
+
         .lyrics-output {
             background: white;
             border-radius: 8px;
             padding: 16px;
             border: 1px solid #ddd;
             min-height: 100px;
-            margin-top: 12px;
+            margin-top: 0;
             font-family: 'Courier New', monospace;
             font-size: 16px;
             line-height: 2;
             white-space: pre-wrap;
             overflow-x: auto;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid #ddd;
         }
 
         .word-block {
@@ -149,6 +248,9 @@
             min-height: 18px;
             line-height: 1.2;
             white-space: nowrap;
+        }
+        .chord-text.interval {
+            color: #2980b9;
         }
 
         .word-text {
@@ -407,6 +509,34 @@
                 padding: 10px;
                 min-width: 60px;
             }
+            .controls-row {
+                padding: 6px 10px;
+                gap: 6px;
+            }
+            .controls-row .transpose-btn {
+                font-size: 16px;
+                padding: 2px 10px;
+                min-width: 30px;
+            }
+            .controls-row .transpose-display {
+                font-size: 16px;
+                min-width: 28px;
+            }
+            .controls-row .toggle-btn {
+                font-size: 12px;
+                padding: 3px 10px;
+            }
+            .controls-row .transpose-reset {
+                font-size: 12px;
+                padding: 3px 8px;
+            }
+            .controls-row label {
+                font-size: 12px;
+            }
+            .controls-row select {
+                font-size: 12px;
+                padding: 2px 6px;
+            }
         }
     </style>
 </head>
@@ -431,26 +561,63 @@ I've come to talk with you again</textarea>
         <button class="btn-export" onclick="exportLyrics()">📤 Export .txt</button>
     </div>
 
-    <div class="info-box">
-        <strong>📖 How to use:</strong><br /><br />
-        
-        <span class="step">1. Paste lyrics → click <span class="highlight">📥 Load Lyrics</span></span>
-        <span class="step">2. Tap any word → pick a chord from the list</span>
-        <span class="step">3. Click <span class="highlight">💾 Save Chords</span> → saves as <strong>.json</strong> (lyrics + chords)</span>
-        <span class="step">4. Later, click <span class="highlight">📂 Load Chords</span> → select the .json file to restore everything</span>
-        <span class="step">5. Click <span class="highlight">📤 Export .txt</span> → creates .txt file for sharing/printing</span>
+    <!-- Controls RIGHT ABOVE CHORD DISPLAY -->
+    <div class="controls-row">
+        <div class="controls-left">
+            <label>🎵 Transpose:</label>
+            <button class="transpose-btn" onclick="transpose(-1)">−</button>
+            <span class="transpose-display" id="transposeDisplay">0</span>
+            <button class="transpose-btn" onclick="transpose(1)">+</button>
+            <button class="transpose-reset" onclick="resetTranspose()">Reset</button>
+        </div>
+        <div class="controls-right">
+            <label>📊 Display:</label>
+            <button class="toggle-btn" id="intervalToggle" onclick="toggleIntervalDisplay()">Chords</button>
+            <span class="key-label">Key:</span>
+            <select id="keySelector" onchange="updateKey()">
+                <option value="C">C</option>
+                <option value="C#">C#</option>
+                <option value="D">D</option>
+                <option value="D#">D#</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="F#">F#</option>
+                <option value="G">G</option>
+                <option value="G#">G#</option>
+                <option value="A">A</option>
+                <option value="A#">A#</option>
+                <option value="B">B</option>
+            </select>
+        </div>
     </div>
 
+    <!-- Chord Display -->
     <div id="lyricsOutput" class="lyrics-output">
         <span style="color:#999; font-style:italic;">Paste lyrics above and tap "Load"</span>
     </div>
 
     <div id="status" class="status"></div>
 
+    <div class="info-box">
+        <strong>📖 How to use:</strong><br /><br />
+        
+        <span class="step">1. Paste lyrics → click <span class="highlight">📥 Load Lyrics</span></span>
+        <span class="step">2. Tap any word → pick a chord from the list</span>
+        <span class="step">3. Use <span class="highlight">🎵 Transpose</span> to change key up/down</span>
+        <span class="step">4. Click <span class="highlight">📊 Display</span> to switch between chord names and intervals</span>
+        <span class="step">5. Select the <span class="highlight">Key</span> for interval display (e.g., if song is in G, select G)</span>
+        <span class="step">6. Click <span class="highlight">💾 Save Chords</span> → saves as .json</span>
+        <span class="step">7. Click <span class="highlight">📂 Load Chords</span> → select .json to restore</span>
+        <span class="step">8. Click <span class="highlight">📤 Export .txt</span> → creates .txt for sharing</span>
+    </div>
+
     <div class="footer">
-        💾 Save Chords = saves as .json (lyrics + chords)<br />
+        💾 Save Chords = saves as .json<br />
         📂 Load Chords = restores from .json<br />
-        📤 Export .txt = saves as .txt (for sharing)
+        📤 Export .txt = saves as .txt<br />
+        🎵 Transpose = shift key up/down<br />
+        📊 Display = toggle chord names / intervals<br />
+        🎼 Key = set the root for interval display
     </div>
 
     <!-- Modal -->
@@ -478,7 +645,12 @@ I've come to talk with you again</textarea>
     </div>
 
     <script>
-        // --- Chords grouped by letter ---
+        // --- Chord definitions ---
+        const CHORD_NAMES = [
+            'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
+        ];
+
+        // --- Chords grouped by letter for the picker ---
         const CHORD_GROUPS = {
             'A': ['A', 'A#', 'Ab', 'Am', 'A#m', 'Abm', 'A7', 'A#7', 'Ab7', 'Amaj7', 'A#maj7', 'Abmaj7'],
             'B': ['B', 'Bb', 'Bm', 'Bbm', 'B7', 'Bb7', 'Bmaj7', 'Bbmaj7'],
@@ -493,6 +665,128 @@ I've come to talk with you again</textarea>
         let selectedLine = null;
         let selectedWord = null;
         let tempChord = null;
+        let currentTranspose = 0;
+        let showIntervals = false;
+        let selectedKey = 'C';
+
+        // --- Chord parsing and transposition ---
+        function parseChord(chord) {
+            if (!chord) return null;
+            const match = chord.match(/^([A-G][#b]?)(.*)$/);
+            if (!match) return null;
+            return { root: match[1], suffix: match[2] };
+        }
+
+        function chordToIndex(root) {
+            const index = CHORD_NAMES.indexOf(root);
+            if (index === -1) {
+                const flatMap = { 'Bb': 'A#', 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#' };
+                const mapped = flatMap[root] || root;
+                return CHORD_NAMES.indexOf(mapped);
+            }
+            return index;
+        }
+
+        function indexToChord(index) {
+            return CHORD_NAMES[index % 12];
+        }
+
+        function transposeChord(chord, semitones) {
+            if (!chord) return null;
+            const parsed = parseChord(chord);
+            if (!parsed) return chord;
+            
+            const idx = chordToIndex(parsed.root);
+            if (idx === -1) return chord;
+            
+            const newIdx = (idx + semitones + 12) % 12;
+            const newRoot = indexToChord(newIdx);
+            return newRoot + parsed.suffix;
+        }
+
+        function chordToInterval(chord, keyRoot) {
+            if (!chord) return null;
+            const parsed = parseChord(chord);
+            if (!parsed) return chord;
+            
+            const keyIdx = chordToIndex(keyRoot);
+            const chordIdx = chordToIndex(parsed.root);
+            if (keyIdx === -1 || chordIdx === -1) return chord;
+            
+            const interval = (chordIdx - keyIdx + 12) % 12;
+            const intervalNames = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+            const intervalNum = intervalNames[interval % 7] || '?';
+            
+            const suffix = parsed.suffix;
+            if (suffix === 'm') return intervalNum + 'm';
+            if (suffix === '7') return intervalNum + '7';
+            if (suffix === 'm7') return intervalNum + 'm7';
+            if (suffix === 'maj7') return intervalNum + 'M7';
+            if (suffix === 'dim') return intervalNum + '°';
+            if (suffix === 'aug') return intervalNum + '+';
+            return intervalNum;
+        }
+
+        // --- Update key for interval display ---
+        function updateKey() {
+            const selector = document.getElementById('keySelector');
+            selectedKey = selector.value;
+            if (showIntervals) {
+                render();
+                showStatus(`Key set to ${selectedKey} for interval display`, 'success');
+            }
+        }
+
+        // --- Transpose function ---
+        function transpose(amount) {
+            if (!lines.length) {
+                showStatus('Load lyrics first.', 'error');
+                return;
+            }
+            
+            currentTranspose += amount;
+            document.getElementById('transposeDisplay').textContent = currentTranspose;
+            
+            lines.forEach(line => {
+                if (line.empty) return;
+                line.words.forEach(w => {
+                    if (w.chord) {
+                        w.chord = transposeChord(w.chord, amount);
+                    }
+                });
+            });
+            
+            render();
+            showStatus(`Transposed ${amount > 0 ? 'up' : 'down'} ${Math.abs(amount)} semitone(s)`, 'success');
+        }
+
+        function resetTranspose() {
+            if (!lines.length) {
+                showStatus('Load lyrics first.', 'error');
+                return;
+            }
+            
+            showStatus('Reset transpose.', 'success');
+            currentTranspose = 0;
+            document.getElementById('transposeDisplay').textContent = '0';
+            loadLyrics();
+        }
+
+        // --- Toggle interval display ---
+        function toggleIntervalDisplay() {
+            showIntervals = !showIntervals;
+            const btn = document.getElementById('intervalToggle');
+            if (showIntervals) {
+                btn.textContent = 'Intervals';
+                btn.classList.add('active');
+                showStatus(`Showing intervals (key: ${selectedKey})`, 'success');
+            } else {
+                btn.textContent = 'Chords';
+                btn.classList.remove('active');
+                showStatus('Showing chord names', 'success');
+            }
+            render();
+        }
 
         // --- Load lyrics ---
         function loadLyrics() {
@@ -509,6 +803,8 @@ I've come to talk with you again</textarea>
                     empty: false
                 };
             });
+            currentTranspose = 0;
+            document.getElementById('transposeDisplay').textContent = '0';
             render();
             showStatus(`Loaded ${lines.length} lines. Tap a word to add a chord.`, 'success');
         }
@@ -527,10 +823,16 @@ I've come to talk with you again</textarea>
                     return;
                 }
                 line.words.forEach((w, wi) => {
-                    const chord = w.chord || '\u00A0';
+                    let displayChord = w.chord || '\u00A0';
+                    
+                    if (showIntervals && w.chord) {
+                        displayChord = chordToInterval(w.chord, selectedKey) || w.chord;
+                    }
+                    
                     const hasChord = w.chord !== null;
+                    const intervalClass = showIntervals && w.chord ? 'interval' : '';
                     html += `<span class="word-block ${hasChord ? 'has-chord' : ''}" onclick="openModal(${li},${wi})">`;
-                    html += `<span class="chord-text">${chord}</span>`;
+                    html += `<span class="chord-text ${intervalClass}">${displayChord}</span>`;
                     html += `<span class="word-text">${w.word}</span>`;
                     html += `</span>`;
                 });
@@ -735,6 +1037,8 @@ I've come to talk with you again</textarea>
                                     empty: false
                                 };
                             });
+                            currentTranspose = 0;
+                            document.getElementById('transposeDisplay').textContent = '0';
                             render();
                             showStatus(`✅ Chord data loaded successfully!`, 'success');
                         } else {
@@ -768,7 +1072,10 @@ I've come to talk with you again</textarea>
                 let chordLine = '';
                 let wordLine = '';
                 line.words.forEach(w => {
-                    const chord = w.chord || '';
+                    let chord = w.chord || '';
+                    if (showIntervals && w.chord) {
+                        chord = chordToInterval(w.chord, selectedKey) || w.chord;
+                    }
                     const word = w.word;
                     const maxLen = Math.max(chord.length, word.length);
                     chordLine += chord.padEnd(maxLen + 1, ' ');
